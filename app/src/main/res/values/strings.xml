@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">group_festival</string>
+    <string name="app_name">Festival la route du son</string>
+    <string name="scene"> </string>
+    <string name="jour"> </string>
+    <string name="button_filtrer"> </string>
+    <string name="detail_group"> </string>
 </resources>
