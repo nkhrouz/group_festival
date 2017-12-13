@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> listGroup;
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,27 +70,22 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < groupList.size(); i++) {
             String group_name = groupList.get(i);
             String url= "http://daviddurand.info/D228/festival/info/"+ group_name;
-            getGroupDetail(url,i,db);
+            saveGroupDetail(url,i,db);
         }
+        // recuperation des details des groupes
         List<Group> groupdetail = db.getAllGroupsDetail();
+//        for (int i = 0; i < groupdetail.size(); i++) {
+//            Group grp = groupdetail.get(i);
+//        }
+        // recuperation de la liste des scenes
+        ArrayList <String> scenes = db.getAllScene();
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, scenes);
+        spScene.setAdapter(adapter);
+        // recuperation de la liste des heure de passage
+        ArrayList<String> passage = db.getHeurePassage();
+        // recuperation date de passage
+        List<String> heure;
 
-
-
-
-
-        // Spinner scene
-        spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
-            {
-                String group_name = parent.getItemAtPosition(position).toString(); //this is your selected item
-                String url= "http://daviddurand.info/D228/festival/info/"+ group_name;
-//                getGroupDetail(url);
-            }
-            public void onNothingSelected(AdapterView<?> parent)
-            {
-
-            }
-        });
 
         // Spinner list group
         spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
@@ -99,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 String group_name = parent.getItemAtPosition(position).toString(); //this is your selected item
                 String url= "http://daviddurand.info/D228/festival/info/"+ group_name;
-//                getGroupDetail(url);
+                getGroupDetail(url);
             }
             public void onNothingSelected(AdapterView<?> parent)
             {
@@ -107,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //Edit Text
+        //Calendrier
         txtJour.setOnClickListener(new OnClickListener() {
 
             @Override
@@ -133,8 +127,6 @@ public class MainActivity extends AppCompatActivity {
                 mDatePicker.setTitle("Select date");
                 mDatePicker.show();  }
         });
-
-
     }
 
 
@@ -192,11 +184,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * get group detail
+     * save group detail in db
      * */
-    private void getGroupDetail(String urlJsonDetail,final int id,final DBHandler db) {
-
-
+    private void saveGroupDetail(String urlJsonDetail,final int id,final DBHandler db) {
 
         JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET,
                 urlJsonDetail, null, new Response.Listener<JSONObject>() {
@@ -209,19 +199,14 @@ public class MainActivity extends AppCompatActivity {
                     // Parsing json object response
                     JSONObject data = response.getJSONObject("data");
                     // recuperation des attributs du JSON
-                    String texte =  data.get("texte").toString().toString();
-                    String artiste =  data.get("artiste").toString().toString();
-                    String web =  data.get("web").toString().toString();
-                    String scene =  data.get("scene").toString().toString();
-                    String image =  data.get("image").toString().toString();
-                    String jour =  data.get("jour").toString().toString();
-                    String heure =  data.get("heure").toString().toString();
-                    String time =  data.get("time").toString().toString();
-                    TextView text = (TextView) findViewById(R.id.textview);
-                    text.setText(Html.fromHtml("<h1 color='black'>"+artiste+"</h1><br />" +
-                                    "<small color='black'>Scene "+scene+" Le "+jour+" a "+heure+"</small><br/>"+
-                                    " <a href="+ web +"></a><br/>"+
-                                    "<i>"+texte+"</i><br/>" ));
+                    String texte =  data.get("texte").toString();
+                    String artiste =  data.get("artiste").toString();
+                    String web =  data.get("web").toString();
+                    String scene =  data.get("scene").toString();
+                    String image =  data.get("image").toString();
+                    String jour =  data.get("jour").toString();
+                    String heure =  data.get("heure").toString();
+                    String time =  data.get("time").toString();
 
                     Group group = new Group();
                     group.setArtiste(artiste);
@@ -231,7 +216,60 @@ public class MainActivity extends AppCompatActivity {
                     group.setTexte(texte);
                     group.setScene(scene);
                     group.setJour(jour);
+
                     db.updateObject(group);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    //cas d erreur a gerer
+                }
+
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // cas d erreur a gerer
+
+            }
+        });
+        //Creating a request queue
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+
+        //Adding request to the queue
+        requestQueue.add(jsonObjReq);
+    }
+
+
+    /**
+     * get group detail
+     * */
+    private void getGroupDetail(String urlJsonDetail) {
+
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET,
+                urlJsonDetail, null, new Response.Listener<JSONObject>() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+
+                try {
+                    JSONObject jObject = new JSONObject();
+                    // Parsing json object response
+                    JSONObject data = response.getJSONObject("data");
+                    // recuperation des attributs du JSON
+                    String texte =  data.get("texte").toString();
+                    String artiste =  data.get("artiste").toString();
+                    String web =  data.get("web").toString();
+                    String scene =  data.get("scene").toString();
+                    String image =  data.get("image").toString();
+                    String jour =  data.get("jour").toString();
+                    String heure =  data.get("heure").toString();
+                    String time =  data.get("time").toString();
+                    TextView text = (TextView) findViewById(R.id.textview);
+                    text.setText(Html.fromHtml("<h1 color='black'>"+artiste+"</h1><br />" +
+                                    "<small color='black'>Scene "+scene+" Le "+jour+" a "+heure+"</small><br/>"+
+                                    " <a href="+ web +"></a><br/>"+
+                                    "<i>"+texte+"</i><br/>" ));
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -254,12 +292,11 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(jsonObjReq);
 
     }
-
-
+    ///TO DOOOOO
     public void addListenerOnButton() {
 
-        btnDisplay = (Button) findViewById(R.id.btnDisplay);
-        text = (TextView) findViewById(R.id.textview);
+//        btnDisplay = (Button) findViewById(R.id.btnDisplay);
+//        text = (TextView) findViewById(R.id.textview);
 
         btnDisplay.setOnClickListener(new OnClickListener() {
 
@@ -271,36 +308,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-
-//    public interface CallBack {
-//        void onSuccess( ArrayList<String> list) throws JSONException;
-//
-//        void onFail(String msg);
-//    }
-
-
-
-//
-//    getListGroup(new CallBack(){
-//        @Override
-//        public void onSuccess(ArrayList<String> list)  {
-//
-//            for (int i = 1; i < list.size(); i++) {
-////                    String url_name= "http://daviddurand.info/D228/festival/info/"+list.get(i);
-//
-//
-//            }
-//        }
-//
-//        @Override
-//        public void onFail(String msg) {
-//            // Do Stuff
-//        }
-//    });
-
-
-
-
+    
 }
 
